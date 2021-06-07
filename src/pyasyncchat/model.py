@@ -82,4 +82,3 @@ def parse_event(evt: str) -> Event:
 
 def dump_event(evt: Event) -> str:
     return evt.json()
-

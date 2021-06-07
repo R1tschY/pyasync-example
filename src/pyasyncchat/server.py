@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
 import time
 from typing import Optional, Any
 from weakref import WeakValueDictionary, WeakSet
 
+import websockets
 from websockets.exceptions import ConnectionClosedError
 
 from pyasyncchat.model import MessageEvent, StatusEvent, dump_event, HelloEvent, parse_event, SendMessageEvent, \
@@ -157,3 +160,24 @@ class ChatUser:
 
 def timestamp() -> int:
     return int(time.time() * 1000)
+
+
+def main():
+    logging.basicConfig(level="INFO")
+    logger = logging.getLogger("pyasync-server")
+
+    port = os.environ.get("CHAT_SERVER_LISTEN_PORT", 8765)
+
+    server = ChatServer()
+
+    start_server = websockets.serve(server.accept, "localhost", port)
+    logger.info("Listing on localhost:%d ...", port)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(start_server)
+    loop.run_forever()
+
+
+if __name__ == '__main__':
+    main()
+
