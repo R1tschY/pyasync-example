@@ -1,6 +1,6 @@
 # Coroutine example in Python
 
-# Setup develop environment
+# Setup development
 
 ```shell
 python3 -m venv .venv
