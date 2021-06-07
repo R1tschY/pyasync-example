@@ -5,6 +5,8 @@ import time
 from typing import Optional, Any
 from weakref import WeakValueDictionary, WeakSet
 
+from websockets.exceptions import ConnectionClosedError
+
 from pyasyncchat.model import MessageEvent, StatusEvent, dump_event, HelloEvent, parse_event, SendMessageEvent, \
     JoinRoomEvent, ChangeNameEvent, Event
 
@@ -23,7 +25,7 @@ class ChatServer:
         self.lobby = self.create_room("lobby")
 
     async def accept(self, websocket, path):
-        self.logger.debug(f"Accept connection {path}")
+        self.logger.info(f"Accept connection {path}")
 
         self.last_id += 1
 
@@ -113,25 +115,29 @@ class ChatUser:
         await self._receive()
 
     async def _receive(self):
-        async for message in self.websocket:
-            try:
-                evt = parse_event(message)
-            except:
-                self.logger.error("ignored message: %s", message)
-                continue
+        try:
+            async for message in self.websocket:
+                try:
+                    evt = parse_event(message)
+                except:
+                    self.logger.error("ignored message: %s", message)
+                    continue
 
-            if isinstance(evt, SendMessageEvent):
-                await self.room.broadcast_message(self, evt.message)
-            elif isinstance(evt, JoinRoomEvent):
-                room_name = evt.room_name
-                if room_name != self.room.name:
-                    await self.join_room_by_name(room_name)
-            elif isinstance(evt, ChangeNameEvent):
-                old_name = self.name
-                self.name = evt.new_name
-                await self.room.notify_user_name_changed(self, old_name)
-            else:
-                self.logger.error("Unsupported message: %r", evt)
+                if isinstance(evt, SendMessageEvent):
+                    await self.room.broadcast_message(self, evt.message)
+                elif isinstance(evt, JoinRoomEvent):
+                    room_name = evt.room_name
+                    if room_name != self.room.name:
+                        await self.join_room_by_name(room_name)
+                elif isinstance(evt, ChangeNameEvent):
+                    old_name = self.name
+                    self.name = evt.new_name
+                    await self.room.notify_user_name_changed(self, old_name)
+                else:
+                    self.logger.error("Unsupported message: %r", evt)
+        except ConnectionClosedError:
+            self.logger.error("User disconnected: %s", self.id)
+            return
 
     async def send_event(self, evt: Event):
         await self.websocket.send(dump_event(evt))

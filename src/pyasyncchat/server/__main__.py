@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    logging.basicConfig(level="DEBUG")
+    logging.basicConfig(level="INFO")
 
     port = os.environ.get("CHAT_SERVER_LISTEN_PORT", 8765)
 
