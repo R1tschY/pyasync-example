@@ -1,29 +1,38 @@
 from __future__ import annotations
 
-from typing import Literal, TypeVar
+from typing import TypeVar, ClassVar
 
-from pydantic import BaseModel, parse_raw_as
+from pydantic import BaseModel, parse_raw_as, validator
 
 _eventTypes = []
 
 
 class BaseEvent(BaseModel):
+    TYPE_NAME: ClassVar[str] = None
     type: str
 
     def __init_subclass__(cls, **kwargs):
         _eventTypes.append(cls)
 
+    @validator('type')
+    def type_match(cls, v):
+        if v != cls.TYPE_NAME:
+            raise ValueError('type does not match')
+        return v
+
 
 # Receive
 
 class HelloEvent(BaseEvent):
-    type: Literal['hello'] = "hello"
+    TYPE_NAME = "hello"
+    type = TYPE_NAME
 
     user_id: str
 
 
 class MessageEvent(BaseEvent):
-    type: Literal['message'] = "message"
+    TYPE_NAME = "message"
+    type = TYPE_NAME
 
     timestamp_ms: int
     user_id: str
@@ -32,7 +41,8 @@ class MessageEvent(BaseEvent):
 
 
 class StatusEvent(BaseEvent):
-    type: Literal['status'] = "status"
+    TYPE_NAME = "status"
+    type = TYPE_NAME
 
     timestamp_ms: int
     user_id: str
@@ -43,19 +53,22 @@ class StatusEvent(BaseEvent):
 # Actions
 
 class JoinRoomEvent(BaseEvent):
-    type: Literal['join'] = "join"
+    TYPE_NAME = "join"
+    type = TYPE_NAME
 
     room_name: str
 
 
 class SendMessageEvent(BaseEvent):
-    type: Literal['send'] = "send"
+    TYPE_NAME = "send"
+    type = TYPE_NAME
 
     message: str
 
 
 class ChangeNameEvent(BaseEvent):
-    type: Literal['change_name'] = "change_name"
+    TYPE_NAME = "change_name"
+    type = TYPE_NAME
 
     new_name: str
 
